@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+*.tsbuildinfo
+vite.config.d.ts
+vite.config.js

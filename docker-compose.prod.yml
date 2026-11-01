@@ -1,0 +1,113 @@
+# ============================================================
+# TASKFLEX — production stack
+#
+# Usage (on the server, in this folder):
+#   cp .env.prod.example .env     # then fill in the REQUIRED values
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Everything is driven by the .env file next to this compose file.
+# The backend refuses to boot unless real JWT secrets and SMTP
+# credentials are set (see backend/app/main.py lifespan guards).
+# ============================================================
+name: taskflex-prod
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-taskflex}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-taskflex}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskflex -d taskflex"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # No published ports: the database is reachable only inside the stack.
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # No published ports: Redis serves the backend only (live-tracking fan-out).
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "false"
+      SEED_ON_START: "false"
+      UPLOAD_DIR: /app/uploads
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-taskflex}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-taskflex}
+      REDIS_URL: redis://redis:6379/0
+
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in .env}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-14}
+
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:?Set FRONTEND_ORIGIN in .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:?Set CORS_ORIGINS in .env}
+
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-smtp}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:?Set SMTP_USER in .env}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:?Set SMTP_PASSWORD in .env}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      OTP_EXPIRE_MINUTES: ${OTP_EXPIRE_MINUTES:-10}
+      OTP_MAX_ATTEMPTS: ${OTP_MAX_ATTEMPTS:-5}
+      OTP_RESEND_COOLDOWN_SECONDS: ${OTP_RESEND_COOLDOWN_SECONDS:-60}
+      OTP_PEPPER: ${OTP_PEPPER:?Set OTP_PEPPER in .env}
+      OTP_LOCK_MINUTES: ${OTP_LOCK_MINUTES:-15}
+
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-20250514}
+
+      MAPS_PROVIDER: ${MAPS_PROVIDER:-osm}
+      MAPS_API_KEY: ${MAPS_API_KEY:-}
+
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-mock}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+
+      PLATFORM_COMMISSION_PERCENT: ${PLATFORM_COMMISSION_PERCENT:-10.0}
+      DEFAULT_WORKER_RADIUS_KM: ${DEFAULT_WORKER_RADIUS_KM:-8.0}
+      OFFER_TTL_MINUTES: ${OFFER_TTL_MINUTES:-15}
+      MAX_OFFERS_PER_TASK: ${MAX_OFFERS_PER_TASK:-6}
+
+      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-10}
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # No published ports: the frontend's nginx proxies /api, /ws and
+    # /uploads to this service over the internal network.
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  uploads:

@@ -1,0 +1,208 @@
+from enum import StrEnum
+
+
+class UserRole(StrEnum):
+    CUSTOMER = "CUSTOMER"
+    WORKER = "WORKER"
+    ADMIN = "ADMIN"
+
+
+class TaskStatus(StrEnum):
+    DRAFT = "DRAFT"
+    PENDING_CONFIRMATION = "PENDING_CONFIRMATION"
+    CONFIRMED = "CONFIRMED"
+    SEARCHING_WORKER = "SEARCHING_WORKER"
+    OFFERED = "OFFERED"
+    ACCEPTED = "ACCEPTED"
+    QUEUED_NEXT = "QUEUED_NEXT"
+    SCHEDULED_OPEN = "SCHEDULED_OPEN"
+    SCHEDULED_ASSIGNED = "SCHEDULED_ASSIGNED"
+    WORKER_ON_THE_WAY = "WORKER_ON_THE_WAY"
+    ARRIVED_AT_LOCATION = "ARRIVED_AT_LOCATION"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETION_REQUESTED = "COMPLETION_REQUESTED"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
+    DISPUTED = "DISPUTED"
+    EMERGENCY_ALERT = "EMERGENCY_ALERT"
+
+
+class TaskType(StrEnum):
+    DOCUMENT_SUBMISSION = "document_submission"
+    QUEUE_STANDING = "queue_standing"
+    GOVERNMENT_OFFICE = "government_office"
+    DOCUMENT_COLLECTION = "document_collection"
+    COURIER_PICKUP = "courier_pickup"
+    FORM_SUBMISSION = "form_submission"
+    APPOINTMENT_ASSISTANCE = "appointment_assistance"
+    LOCAL_ERRAND = "local_errand"
+    GROCERY_PICKUP = "grocery_pickup"
+    PARCEL_COLLECTION = "parcel_collection"
+    OFFICE_ERRAND = "office_errand"
+    BANK_ASSISTANCE = "bank_assistance"
+    COLLEGE_WORK = "college_work"
+    OTHER = "other"
+
+
+class Urgency(StrEnum):
+    LOW = "low"
+    NORMAL = "normal"
+    HIGH = "high"
+    URGENT = "urgent"
+
+
+class OfferStatus(StrEnum):
+    PENDING = "PENDING"
+    ACCEPTED = "ACCEPTED"
+    REJECTED = "REJECTED"
+    EXPIRED = "EXPIRED"
+    CANCELLED = "CANCELLED"
+    TIMEOUT = "TIMEOUT"
+
+
+class BidStatus(StrEnum):
+    PENDING = "PENDING"
+    ACCEPTED = "ACCEPTED"
+    DECLINED = "DECLINED"
+    EXPIRED = "EXPIRED"
+
+
+class WorkerTier(StrEnum):
+    SILVER = "SILVER"
+    GOLD = "GOLD"
+    PLATINUM = "PLATINUM"
+
+
+class PayoutStatus(StrEnum):
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+class AffinityType(StrEnum):
+    PREFERRED = "PREFERRED"
+    BLACKLISTED = "BLACKLISTED"
+
+
+class RideCheckType(StrEnum):
+    ROUTE_DEVIATION = "ROUTE_DEVIATION"
+    UNEXPLAINED_STOP = "UNEXPLAINED_STOP"
+
+
+class RideCheckStatus(StrEnum):
+    OPEN = "OPEN"
+    ACKNOWLEDGED = "ACKNOWLEDGED"
+    ESCALATED = "ESCALATED"
+    RESOLVED = "RESOLVED"
+
+
+class ExpenseCategory(StrEnum):
+    PARKING = "PARKING"
+    GOVT_FEE = "GOVT_FEE"
+    PURCHASE = "PURCHASE"
+    PRINTING = "PRINTING"
+    OTHER = "OTHER"
+
+
+class ExpenseStatus(StrEnum):
+    PENDING_APPROVAL = "PENDING_APPROVAL"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    REIMBURSED = "REIMBURSED"
+
+
+class SosStatus(StrEnum):
+    OPEN = "OPEN"
+    RESOLVED = "RESOLVED"
+
+
+class AssignmentStatus(StrEnum):
+    ACTIVE = "ACTIVE"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
+
+
+class VerificationStatus(StrEnum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+
+
+class DocumentType(StrEnum):
+    ID_CARD = "id_card"
+    ADDRESS_PROOF = "address_proof"
+    POLICE_CLEARANCE = "police_clearance"
+    OTHER = "other"
+
+
+class PaymentStatus(StrEnum):
+    INITIATED = "INITIATED"
+    AUTHORIZED = "AUTHORIZED"
+    CAPTURED = "CAPTURED"
+    FAILED = "FAILED"
+    REFUNDED = "REFUNDED"
+    CANCELLED = "CANCELLED"
+
+
+class TransactionType(StrEnum):
+    CREDIT = "CREDIT"
+    DEBIT = "DEBIT"
+    COMMISSION = "COMMISSION"
+    PAYOUT = "PAYOUT"
+    REFUND = "REFUND"
+    TIP = "TIP"
+    QUEST_BONUS = "QUEST_BONUS"
+    WITHDRAWAL = "WITHDRAWAL"
+
+
+class DisputeStatus(StrEnum):
+    OPEN = "OPEN"
+    UNDER_REVIEW = "UNDER_REVIEW"
+    RESOLVED = "RESOLVED"
+    REJECTED = "REJECTED"
+
+
+class RatingDirection(StrEnum):
+    CUSTOMER_TO_WORKER = "CUSTOMER_TO_WORKER"
+    WORKER_TO_CUSTOMER = "WORKER_TO_CUSTOMER"
+
+
+class NotificationType(StrEnum):
+    TASK_CREATED = "TASK_CREATED"
+    TASK_CONFIRMED = "TASK_CONFIRMED"
+    WORKER_FOUND = "WORKER_FOUND"
+    TASK_OFFER = "TASK_OFFER"
+    WORKER_ACCEPTED = "WORKER_ACCEPTED"
+    WORKER_ARRIVING = "WORKER_ARRIVING"
+    TASK_STARTED = "TASK_STARTED"
+    TASK_COMPLETED = "TASK_COMPLETED"
+    COMPLETION_CONFIRMED = "COMPLETION_CONFIRMED"
+    PAYMENT_SUCCESSFUL = "PAYMENT_SUCCESSFUL"
+    RATING_RECEIVED = "RATING_RECEIVED"
+    DISPUTE_CREATED = "DISPUTE_CREATED"
+    DISPUTE_RESOLVED = "DISPUTE_RESOLVED"
+    MESSAGE_RECEIVED = "MESSAGE_RECEIVED"
+    EXPENSE_REQUESTED = "EXPENSE_REQUESTED"
+    EXPENSE_APPROVED = "EXPENSE_APPROVED"
+    EXPENSE_REJECTED = "EXPENSE_REJECTED"
+    SOS_TRIGGERED = "SOS_TRIGGERED"
+    OTP_VERIFIED = "OTP_VERIFIED"
+    OFFER_TIMEOUT = "OFFER_TIMEOUT"
+    TASK_BID_RECEIVED = "TASK_BID_RECEIVED"
+    TASK_BID_ACCEPTED = "TASK_BID_ACCEPTED"
+    RIDECHECK_ALERT = "RIDECHECK_ALERT"
+    QUEST_COMPLETED = "QUEST_COMPLETED"
+    TIER_UPGRADED = "TIER_UPGRADED"
+    READINESS_REQUIRED = "READINESS_REQUIRED"
+    RESERVATION_REVOKED = "RESERVATION_REVOKED"
+    PAYOUT_PROCESSED = "PAYOUT_PROCESSED"
+    TIP_RECEIVED = "TIP_RECEIVED"
+    SYSTEM = "SYSTEM"
+
+
+# Allowed worker-side status transitions from ACCEPTED onwards. Arrival and
+# task start are OTP-gated, so they are not part of this free-flow map.
+WORKER_STATUS_FLOW: dict[str, str] = {
+    TaskStatus.ACCEPTED: TaskStatus.WORKER_ON_THE_WAY,
+    TaskStatus.WORKER_ON_THE_WAY: TaskStatus.ARRIVED_AT_LOCATION,
+}

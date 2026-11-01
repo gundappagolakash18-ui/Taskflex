@@ -1,0 +1,62 @@
+name: taskflex
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: taskflex
+      POSTGRES_PASSWORD: taskflex
+      POSTGRES_DB: taskflex
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskflex -d taskflex"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+psycopg2://taskflex:taskflex@db:5432/taskflex
+      JWT_SECRET: change-me-access-secret-not-for-production
+      JWT_REFRESH_SECRET: change-me-refresh-secret-not-for-production
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+      AI_PROVIDER: mock
+      PAYMENT_PROVIDER: mock
+      REDIS_URL: redis://redis:6379/0
+      SEED_ON_START: "true"
+      UPLOAD_DIR: /app/uploads
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  uploads:

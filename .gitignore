@@ -1,0 +1,56 @@
+# Dependencies
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+venv/
+.venv/
+env/
+
+# Node
+node_modules/
+dist/
+coverage/
+*.local
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+!.env.prod.example
+
+# Databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite3
+*.sqlite
+
+# Local test artifacts / screenshots
+/customer-tracking-before.png
+/worker-tracking-before.png
+backend/scripts/e2e_proof.jpg
+*.tsbuildinfo
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+__snapshot__/
+.vite/
+.turbo/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Uploads (user-generated content)
+uploads/
+backend/uploads/
+
+# Logs
+*.log
+logs/
