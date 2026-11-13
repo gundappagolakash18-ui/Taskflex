@@ -114,7 +114,9 @@ taskflex/
 ├── docker-compose.prod.yml     # production stack (env-driven, guarded)
 ├── .env.example                # local configuration, documented
 ├── .env.prod.example           # production deployment template
-├── DEPLOY.md                   # step-by-step deployment guide
+├── DEPLOY.md                   # Docker/VPS deployment guide
+├── RENDER.md                   # Render Blueprint deployment guide
+├── render.yaml                 # Render Blueprint (API, web, Postgres, Key Value)
 ├── docs/                       # architecture, API, database, AI docs
 ├── backend/
 │   ├── Dockerfile
@@ -404,7 +406,8 @@ are disabled, and the backend refuses to boot without real JWT secrets and SMTP
 credentials.
 
 Full step-by-step guide — configuration, first admin bootstrap, HTTPS with Caddy,
-updates, and backups: **[DEPLOY.md](DEPLOY.md)**.
+updates, and backups: **[DEPLOY.md](DEPLOY.md)**. To deploy on Render instead, use
+the Blueprint in **[RENDER.md](RENDER.md)**.
 
 ## Further documentation
 

@@ -20,15 +20,16 @@ def seed_if_empty() -> bool:
     init_db()
     db = SessionLocal()
     try:
+        from app.core.config import settings
         from app.models import User
-        from database.seed import seed_demo_data
+        from database.seed import seed_demo_data, seed_production
 
         user_count = db.scalar(select(func.count()).select_from(User))
         if user_count:
             logger.info("seed_skipped_users_present", extra_fields={"user_count": int(user_count)})
             return False
 
-        summary = seed_demo_data(db)
+        summary = seed_production(db) if settings.is_production else seed_demo_data(db)
         db.commit()
         logger.info("seed_complete", extra_fields=summary)
         return True

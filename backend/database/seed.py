@@ -1035,6 +1035,31 @@ def seed_demo_data(db: Session) -> dict:
     return summary
 
 
+def seed_production(db: Session) -> dict:
+    """Create only the operator account and reference data — no demo users or tasks."""
+    for name, slug, category, desc in SKILLS:
+        db.add(Skill(name=name, slug=slug, category=category, description=desc))
+    db.flush()
+
+    db.add(
+        User(
+            email=ADMIN_EMAIL,
+            phone=_phone(0),
+            password_hash=hash_password(ADMIN_PASSWORD),
+            full_name=ADMIN_NAME,
+            role=UserRole.ADMIN.value,
+            city=CITY,
+            is_email_verified=True,
+        )
+    )
+    db.flush()
+    _seed_system_settings(db)
+
+    summary = {"mode": "production", "admins": 1, "skills": len(SKILLS)}
+    logger.info("production_seed_complete", extra_fields=summary)
+    return summary
+
+
 def main() -> None:
     from app.db.init_db import init_db
     from app.db.session import SessionLocal
