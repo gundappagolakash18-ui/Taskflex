@@ -115,9 +115,8 @@ services:
     healthCheckPath: /
     autoDeploy: true
     envVars:
-      # nginx proxies /api, /ws, /uploads and /health to the API's internal address.
-      - key: BACKEND_HOSTPORT
-        fromService:
-          type: web
-          name: taskflex-api
-          property: hostport
+      # nginx proxies /api, /ws, /uploads and /health to the API. The public
+      # URL is used on purpose: requests through Render's edge wake a
+      # spun-down free instance, and nginx need not resolve a private name.
+      - key: BACKEND_URL
+        value: https://taskflex-api.onrender.com

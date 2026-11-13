@@ -113,7 +113,12 @@ these settings:
 - API: Docker, root directory `backend`, Dockerfile `backend/Dockerfile`,
   health check `/health`, env vars as in `render.yaml`.
 - Web: Docker, root directory `frontend`, Dockerfile `frontend/Dockerfile`,
-  health check `/`, env `BACKEND_HOSTPORT` = `<api-internal-host>:<port>`.
+  health check `/`, env `BACKEND_URL` = `https://<api-service>.onrender.com`.
+  nginx resolves this per request. Pointing it at the public API URL (rather
+  than the internal host) is deliberate: it stops nginx from failing to start
+  before Render's DNS is ready, and requests through Render's edge wake a
+  spun-down free API instance. Internally, `http://backend:8000` is the default
+  for docker compose.
 - Database and Key Value: inject their connection strings as `DATABASE_URL` and
   `REDIS_URL`.
 
