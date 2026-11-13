@@ -57,14 +57,14 @@ def upgrade() -> None:
     )
     op.add_column("worker_profiles", sa.Column("upi_id", sa.String(length=120), nullable=True))
     op.add_column("worker_profiles", sa.Column("last_online_at", sa.DateTime(timezone=True), nullable=True))
-    op.create_foreign_key(
-        "fk_worker_profiles_queued_task_id_tasks",
-        "worker_profiles",
-        "tasks",
-        ["queued_task_id"],
-        ["id"],
-        ondelete="SET NULL",
-    )
+    with op.batch_alter_table("worker_profiles") as batch_op:
+        batch_op.create_foreign_key(
+            "fk_worker_profiles_queued_task_id_tasks",
+            "tasks",
+            ["queued_task_id"],
+            ["id"],
+            ondelete="SET NULL",
+        )
 
     # --- Counter-offer bids ---
     op.create_table(
@@ -232,7 +232,8 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_task_bids_created_at"), table_name="task_bids")
     op.drop_table("task_bids")
 
-    op.drop_constraint("fk_worker_profiles_queued_task_id_tasks", "worker_profiles", type_="foreignkey")
+    with op.batch_alter_table("worker_profiles") as batch_op:
+        batch_op.drop_constraint("fk_worker_profiles_queued_task_id_tasks", type_="foreignkey")
     op.drop_column("worker_profiles", "last_online_at")
     op.drop_column("worker_profiles", "upi_id")
     op.drop_column("worker_profiles", "wrapping_up_soon")
