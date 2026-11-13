@@ -4,24 +4,22 @@
 
 databases:
   - name: taskflex-db
-    databaseName: taskflex
-    user: taskflex
     plan: free
-    region: singapore
-    postgresMajorVersion: "16"
+    region: oregon
+    postgresMajorVersion: "18"
 
 services:
   - type: keyvalue
     name: taskflex-redis
     plan: free
-    region: singapore
+    region: oregon
     ipAllowList: []
 
   - type: web
     name: taskflex-api
     runtime: docker
     plan: free
-    region: singapore
+    region: oregon
     rootDir: backend
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
@@ -109,7 +107,7 @@ services:
     name: taskflex-web
     runtime: docker
     plan: free
-    region: singapore
+    region: oregon
     rootDir: frontend
     dockerfilePath: ./Dockerfile
     # Keep this independent of the API so a cold-starting backend
