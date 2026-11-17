@@ -34,9 +34,27 @@ These are marked `sync: false` in `render.yaml` and are stored only in Render:
 
 | Variable | Value |
 | --- | --- |
-| `SMTP_USER` | Gmail address that sends signup OTPs |
+| `SENDGRID_API_KEY` | SendGrid API key — the production sender (see below) |
+| `EMAIL_FROM` | Address shown as the sender (must be a verified SendGrid sender) |
+| `SMTP_USER` | Gmail address — only used when `EMAIL_PROVIDER=smtp` (local dev) |
 | `SMTP_PASSWORD` | Gmail **App Password** (16 characters, not the account password) |
-| `EMAIL_FROM` | Same Gmail address |
+
+> **Email on the free plan:** Render blocks outbound SMTP ports (25/465/587) on free
+> web services, so Gmail SMTP cannot send from a free instance regardless of
+> credentials. The blueprint therefore sets `EMAIL_PROVIDER=sendgrid`, which sends
+> over HTTPS port 443. To activate it (about 5 minutes, no credit card):
+>
+> 1. Sign up at [sendgrid.com](https://sendgrid.com) with your Google account (free tier: 100 emails/day).
+> 2. **Settings → Sender Authentication → Verify a Single Sender**: enter the Gmail
+>    address you want emails to come from and click the confirmation link SendGrid
+>    emails you.
+> 3. **Settings → API Keys → Create API Key** (full access), copy it.
+> 4. In the Render dashboard, open `taskflex-api` → Environment: paste the key into
+>    `SENDGRID_API_KEY` and the verified address into `EMAIL_FROM`, then **Save**
+>    (triggers a redeploy).
+>
+> Registration OTP emails then work on the live site. For local development,
+> keep using `EMAIL_PROVIDER=smtp` with the Gmail app password in `backend/.env`.
 | `RAZORPAY_KEY_ID` | Razorpay key id (test or live) |
 | `RAZORPAY_KEY_SECRET` | Razorpay key secret |
 | `RAZORPAY_WEBHOOK_SECRET` | Secret you set on the Razorpay webhook |

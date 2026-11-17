@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     max_offers_per_task: int = 6
 
     # Notifications
-    email_provider: str = "log"  # "log" | "smtp"
+    email_provider: str = "log"  # "log" | "smtp" | "sendgrid"
     sms_provider: str = "log"
 
     # Email (Gmail SMTP) — app password, never the account password
@@ -79,6 +79,9 @@ class Settings(BaseSettings):
     smtp_user: str = ""
     smtp_password: str = ""
     email_from: str = ""  # falls back to smtp_user when empty
+
+    # Email (SendGrid HTTP API) — works where SMTP ports are blocked (e.g. Render free)
+    sendgrid_api_key: str = ""
 
     # One-time passcodes
     otp_expire_minutes: int = 10

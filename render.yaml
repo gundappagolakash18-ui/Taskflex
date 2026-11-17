@@ -56,9 +56,13 @@ services:
       - key: REFRESH_TOKEN_EXPIRE_DAYS
         value: "14"
 
-      # Required in production: signups use email OTP.
+      # Required in production: signups use email OTP. SendGrid is the default
+      # because Render's free plan blocks every SMTP port (25/465/587), so
+      # Gmail SMTP cannot send from a free instance no matter the credentials.
       - key: EMAIL_PROVIDER
-        value: smtp
+        value: sendgrid
+      - key: SENDGRID_API_KEY
+        sync: false
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT

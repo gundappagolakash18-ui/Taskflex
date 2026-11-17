@@ -68,8 +68,8 @@ def database(monkeypatch):
         "app.services.auth_service.secrets",
         types.SimpleNamespace(randbelow=lambda _: 123456),
     )
-    monkeypatch.setattr("app.services.auth_service.send_email_smtp", lambda *args, **kwargs: True)
-    monkeypatch.setattr("app.notifications.channels.send_email_smtp", lambda *args, **kwargs: True)
+    monkeypatch.setattr("app.services.auth_service.send_email", lambda *args, **kwargs: True)
+    monkeypatch.setattr("app.notifications.channels.send_email", lambda *args, **kwargs: True)
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     shutil.rmtree(_TEST_UPLOAD_DIR, ignore_errors=True)

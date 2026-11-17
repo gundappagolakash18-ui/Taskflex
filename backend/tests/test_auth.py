@@ -433,3 +433,79 @@ def test_google_config_reflects_client_id(client, monkeypatch):
     body = resp.json()["data"]
     assert body["enabled"] is True
     assert body["client_id"] == "abc.apps.googleusercontent.com"
+
+
+# ---------- SendGrid email provider ----------
+
+from app.notifications import channels as _channels
+
+# Captured at import time: the autouse `database` fixture replaces
+# channels.send_email with a no-op for every test, so dispatch tests restore it.
+_REAL_SEND_EMAIL = _channels.send_email
+
+
+def test_sendgrid_payload_uses_email_from(monkeypatch):
+    from app.notifications import channels
+
+    monkeypatch.setattr(channels.settings, "email_from", "sender@example.com")
+    payload = channels.build_sendgrid_payload("to@example.com", "Hi", "<p>Hi</p>", "Hi")
+    assert payload["from"] == {"email": "sender@example.com", "name": "TaskFlex"}
+    assert payload["personalizations"] == [{"to": [{"email": "to@example.com"}]}]
+    assert payload["subject"] == "Hi"
+    assert [c["type"] for c in payload["content"]] == ["text/plain", "text/html"]
+
+
+def test_sendgrid_payload_falls_back_to_smtp_user(monkeypatch):
+    from app.notifications import channels
+
+    monkeypatch.setattr(channels.settings, "email_from", "")
+    monkeypatch.setattr(channels.settings, "smtp_user", "gmail@gmail.com")
+    payload = channels.build_sendgrid_payload("to@example.com", "Hi", "<p>Hi</p>", "Hi")
+    assert payload["from"]["email"] == "gmail@gmail.com"
+
+
+def test_send_email_dispatches_to_sendgrid(monkeypatch):
+    import httpx
+
+    from app.notifications import channels
+
+    calls = []
+
+    class _Resp:
+        status_code = 202
+        text = ""
+
+    def _post(url, headers=None, json=None, timeout=None):
+        calls.append((url, headers, json))
+        return _Resp()
+
+    monkeypatch.setattr(channels, "send_email", _REAL_SEND_EMAIL)
+    monkeypatch.setattr(channels.settings, "email_provider", "sendgrid")
+    monkeypatch.setattr(channels.settings, "sendgrid_api_key", "SG.KEY")
+    monkeypatch.setattr(httpx, "post", _post)
+    assert channels.send_email("to@example.com", "Subj", "<p>x</p>", "x") is True
+    url, headers, payload = calls[0]
+    assert url == channels.SENDGRID_API_URL
+    assert headers["Authorization"] == "Bearer SG.KEY"
+    assert payload["personalizations"][0]["to"][0]["email"] == "to@example.com"
+
+
+def test_send_email_raises_on_sendgrid_failure(monkeypatch):
+    import httpx
+
+    from app.notifications import channels
+
+    class _Resp:
+        status_code = 403
+        text = " forbidden"
+
+    monkeypatch.setattr(channels, "send_email", _REAL_SEND_EMAIL)
+    monkeypatch.setattr(channels.settings, "email_provider", "sendgrid")
+    monkeypatch.setattr(channels.settings, "sendgrid_api_key", "SG.KEY")
+    monkeypatch.setattr(httpx, "post", lambda *a, **k: _Resp())
+    try:
+        channels.send_email("to@example.com", "Subj", "<p>x</p>", "x")
+    except RuntimeError as exc:
+        assert "sendgrid_error status=403" in str(exc)
+    else:
+        raise AssertionError("expected RuntimeError")

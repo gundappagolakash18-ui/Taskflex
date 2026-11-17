@@ -1,9 +1,10 @@
 """Notification delivery channels.
 
 InAppChannel persists to the notifications table (always on).
-Email is delivered through the configured SMTP account when
-EMAIL_PROVIDER=smtp, or logged when EMAIL_PROVIDER=log. SMS remains
-log-backed until a provider is configured.
+Email is delivered through the configured provider: SMTP account when
+EMAIL_PROVIDER=smtp, SendGrid HTTP API when EMAIL_PROVIDER=sendgrid
+(Render free blocks SMTP ports, so production uses SendGrid), or logged
+when EMAIL_PROVIDER=log. SMS remains log-backed until a provider is configured.
 """
 
 from abc import ABC, abstractmethod
@@ -92,14 +93,14 @@ class LogSMSChannel(NotificationChannel):
         return True
 
 
-class SmtpEmailChannel(NotificationChannel):
+class RealEmailChannel(NotificationChannel):
     """Delivers notification email to the user's registered address."""
 
-    name = "smtp_email"
+    name = "email"
 
     def send(self, notification: OutgoingNotification) -> bool:
-        if not smtp_configured():
-            logger.warning("email_notification_skipped smtp_not_configured")
+        if not email_delivery_configured():
+            logger.warning("email_notification_skipped email_not_configured")
             return False
 
         from app.db.session import SessionLocal
@@ -126,7 +127,7 @@ class SmtpEmailChannel(NotificationChannel):
         if link:
             html += f'<p><a href="{html_lib.escape(link)}">Open in TaskFlex</a></p>'
             text += f"\n\n{link}"
-        return send_email_smtp(
+        return send_email(
             to_address,
             f"TaskFlex: {notification.title}",
             html,
@@ -142,8 +143,8 @@ class NoopChannel(NotificationChannel):
 
 
 def get_email_channel() -> NotificationChannel:
-    if settings.email_provider == "smtp":
-        return SmtpEmailChannel()
+    if settings.email_provider in ("smtp", "sendgrid"):
+        return RealEmailChannel()
     if settings.email_provider == "log":
         return LogEmailChannel()
     return NoopChannel()
@@ -155,6 +156,65 @@ def get_sms_channel() -> NotificationChannel:
 
 def smtp_configured() -> bool:
     return bool(settings.smtp_user and settings.smtp_password)
+
+
+def sendgrid_configured() -> bool:
+    return bool(settings.sendgrid_api_key)
+
+
+def email_delivery_configured() -> bool:
+    provider = settings.email_provider.lower()
+    if provider == "smtp":
+        return smtp_configured()
+    if provider == "sendgrid":
+        return sendgrid_configured()
+    return provider == "log"
+
+
+def send_email(to: str, subject: str, html: str, text: str) -> bool:
+    """Route one email through the configured provider. Caller handles failures."""
+    provider = settings.email_provider.lower()
+    if provider == "smtp":
+        return send_email_smtp(to, subject, html, text)
+    if provider == "sendgrid":
+        return send_email_sendgrid(to, subject, html, text)
+    raise RuntimeError(f"email_provider {provider!r} does not deliver real email")
+
+
+SENDGRID_API_URL = "https://api.sendgrid.com/v3/mail/send"
+
+
+def build_sendgrid_payload(to: str, subject: str, html: str, text: str) -> dict:
+    from_addr = settings.email_from or settings.smtp_user
+    return {
+        "personalizations": [{"to": [{"email": to}]}],
+        "from": {"email": from_addr, "name": "TaskFlex"},
+        "subject": subject,
+        "content": [
+            {"type": "text/plain", "value": text},
+            {"type": "text/html", "value": html},
+        ],
+    }
+
+
+def send_email_sendgrid(to: str, subject: str, html: str, text: str) -> bool:
+    """Send one email via the SendGrid HTTP API. Caller handles failures.
+
+    Uses port 443 because Render's free plan blocks every SMTP port, so the
+    Gmail SMTP path cannot work there no matter which credentials are set.
+    """
+    import httpx
+
+    resp = httpx.post(
+        SENDGRID_API_URL,
+        headers={"Authorization": f"Bearer {settings.sendgrid_api_key}"},
+        json=build_sendgrid_payload(to, subject, html, text),
+        timeout=20,
+    )
+    if resp.status_code >= 400:
+        raise RuntimeError(f"sendgrid_error status={resp.status_code} body={resp.text[:300]}")
+    logger.info("email_sent via_sendgrid to=%s subject=%r", to, subject)
+    return True
 
 
 def send_email_smtp(to: str, subject: str, html: str, text: str) -> bool:

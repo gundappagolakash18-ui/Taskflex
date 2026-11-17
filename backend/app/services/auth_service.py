@@ -25,7 +25,7 @@ from app.core.security import (
     verify_password,
 )
 from app.models import EmailOtp, User
-from app.notifications.channels import send_email_smtp, smtp_configured
+from app.notifications.channels import email_delivery_configured, send_email
 from app.repositories import AuditRepository, UserRepository
 
 logger = get_logger("auth")
@@ -122,9 +122,10 @@ class AuthService:
         self._deliver_otp(email, code)
 
     def _deliver_otp(self, email: str, code: str) -> None:
-        if settings.email_provider.lower() != "smtp" or not smtp_configured():
+        provider = settings.email_provider.lower()
+        if provider not in ("smtp", "sendgrid") or not email_delivery_configured():
             raise AppException(
-                "Email delivery is not configured. Set SMTP_USER and SMTP_PASSWORD before registering.",
+                "Email delivery is not configured. Set SENDGRID_API_KEY (or SMTP_USER and SMTP_PASSWORD) before registering.",
                 code=ErrorCode.INTERNAL_ERROR,
                 status_code=503,
             )
@@ -145,7 +146,7 @@ class AuthService:
         </div>
         """
         try:
-            send_email_smtp(email, subject, html, text)
+            send_email(email, subject, html, text)
         except Exception:
             logger.exception("otp_email_failed email=%s", email)
             raise AppException(
