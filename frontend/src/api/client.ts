@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
+import { toast } from "../stores/toast";
 
 export class ApiError extends Error {
   code: string;
@@ -51,6 +52,27 @@ api.interceptors.request.use((config) => {
 
 type Envelope = { success: boolean; data?: unknown; message?: string; error?: { code: string; message: string } };
 
+type ColdStartConfig = AxiosRequestConfig & { _retried?: boolean; _wakeAttempt?: number };
+
+// A free Render instance that has gone to sleep answers the first requests
+// with an edge 502/503/504 (or drops them) for ~50s while it boots. Our API
+// always replies with a JSON envelope, so any other body means the platform
+// edge answered instead — safe to retry.
+const WAKE_RETRY_LIMIT = 4;
+const WAKE_RETRY_DELAY_MS = 10000;
+
+function isServerWaking(error: AxiosError<Envelope>): boolean {
+  const status = error.response?.status;
+  if (!status) return true; // no response at all: connection reset or timeout
+  if (status !== 502 && status !== 503 && status !== 504) return false;
+  const body = error.response?.data;
+  return !(body && typeof body === "object" && "success" in body);
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 let refreshPromise: Promise<string> | null = null;
 
 async function refreshAccessToken(): Promise<string> {
@@ -81,9 +103,22 @@ api.interceptors.response.use(
     return response;
   },
   async (error: AxiosError<Envelope>) => {
-    const original = error.config as (AxiosRequestConfig & { _retried?: boolean }) | undefined;
+    const original = error.config as ColdStartConfig | undefined;
     const status = error.response?.status;
     const url = original?.url ?? "";
+
+    if (original && isServerWaking(error)) {
+      const attempt = (original._wakeAttempt ?? 0) + 1;
+      if (attempt <= WAKE_RETRY_LIMIT) {
+        original._wakeAttempt = attempt;
+        toast.info("Server is starting up — retrying…");
+        await wait(WAKE_RETRY_DELAY_MS);
+        return api.request(original);
+      }
+      return Promise.reject(
+        new ApiError("The server is still starting up. Please try again in a minute.", "SERVER_WAKING", status ?? 503)
+      );
+    }
 
     if (status === 401 && original && !original._retried && !url.includes("/auth/login") && !url.includes("/auth/refresh")) {
       original._retried = true;
